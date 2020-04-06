@@ -334,4 +334,5 @@ fi
 #vimhelp ()    { vim -c "help $1" -c on -c "au! VimEnter *" }
 
 alias nano="echo Ahem\?"
+alias ssh="kitty +kitten ssh"
 ## END OF FILE #################################################################
