@@ -17,13 +17,17 @@ set $mod Mod1
 # Lock screen
 bindsym Mod4+l exec i3lock -e -i ~/.config/i3/lockscreen.png
 
-# Selectable screenshot to clipboard
-bindsym Print exec maim -s | xclip -selection clipboard -t image/png
+# Selectable screenshot to clipboard (frozen)
+bindsym Print exec maim | feh - -x & maim -s | xclip -selection clipboard -t image/png
+# Selectable screenshot to clipboard (live)
 bindsym $mod+p exec maim -s | xclip -selection clipboard -t image/png
 
 # Capture currently active window to clipboard
 bindsym $mod+Shift+p exec maim -i $(xdotool getactivewindow) | xclip -selection clipboard -t image/png
 
+
+# Always start feh fullscreen (needed for screenshots w/feh)
+for_window [class="feh"] fullscreen enable
 
 # Font for window titles. Will also be used by the bar unless a different font
 # is used in the bar {} block below.
