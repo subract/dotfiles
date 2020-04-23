@@ -4,16 +4,16 @@
 
 Clone into some directory immediately inside the user's home directory, then use `stow <packagename>`
 
-# Package notes
+## Package notes
 
-## ssh-agent
+### ssh-agent
 
 This package creates a systemd user service that starts an SSH agent, and a `.pam_environment` file that sets the appropriate environment variable. After installing the packer, run 
 ```bash
 systemctl --user enable --now ssh-agent
 ```
 
-## i3
+### i3
 
 Intended for use with [j4-make-config](https://github.com/okraits/j4-make-config). After updating dots, run 
 
