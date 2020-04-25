@@ -1,0 +1,22 @@
+ # Lock screen
+bindsym Mod4+l exec i3lock -e -i ~/.config/i3/lockscreen-desktop.png
+ 
+ # Set monitor to 144Hz on startup
+exec xrandr --output DP-0 --mode 2560x1440 --rate 144
+
+# Start i3bar to display a workspace bar (plus the system information i3status
+# finds out, if available)
+bar {
+        status_command exec ~/.config/i3status/net-speed.sh config-desktop
+        # $i3-theme-bar
+}
+
+# Startup tasks
+exec --no-startup-id "i3-msg 'append_layout ~/.config/i3/desktop-layout.json'"
+assign [class="^discord$"] 2:comms
+exec firefox
+exec discord
+exec keepassxc
+exec kitty
+# Switch back to workspace 1
+exec --no-startup-id "i3-msg 'workspace 1:web'"
