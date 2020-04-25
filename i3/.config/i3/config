@@ -48,6 +48,16 @@ exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
 # and nm-applet is a desktop environment-independent system tray GUI for it.
 exec --no-startup-id nm-applet
 
+# Startup tasks
+exec --no-startup-id "i3-msg 'append_layout ~/.config/i3/desktop-layout.json'"
+assign [class="^discord$"] 2:comms
+exec firefox
+exec discord
+exec keepassxc
+exec kitty
+# Switch back to workspace 1
+exec --no-startup-id "i3-msg 'workspace 1:web'"
+
 # Set monitor to 144Hz on startup
 exec xrandr --output DP-0 --mode 2560x1440 --rate 144
 
@@ -80,23 +90,11 @@ bindsym $mod+j focus down
 bindsym $mod+k focus up
 bindsym $mod+l focus right
 
-# alternatively, you can use the cursor keys:
-# bindsym $mod+Left focus left
-# bindsym $mod+Down focus down
-# bindsym $mod+Up focus up
-# bindsym $mod+Right focus right
-
 # move focused window
 bindsym $mod+Shift+h move left
 bindsym $mod+Shift+j move down
 bindsym $mod+Shift+k move up
 bindsym $mod+Shift+l move right
-
-# alternatively, you can use the cursor keys:
-# bindsym $mod+Shift+Left move left
-# bindsym $mod+Shift+Down move down
-# bindsym $mod+Shift+Up move up
-# bindsym $mod+Shift+Right move right
 
 # split in horizontal orientation
 bindsym $mod+z split h
@@ -148,6 +146,10 @@ bindsym $mod+7 workspace number $ws7
 bindsym $mod+8 workspace number $ws8
 bindsym $mod+9 workspace number $ws9
 bindsym $mod+0 workspace number $ws10
+
+# move to next workspace
+bindsym Mod4+Tab workspace next
+bindsym Mod4+Shift+Tab workspace prev
 
 # move focused container to workspace
 bindsym $mod+Shift+1 move container to workspace number $ws1
