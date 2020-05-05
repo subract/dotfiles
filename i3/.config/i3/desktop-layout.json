@@ -38,7 +38,7 @@
   "layout": "splith",
   "percent": 1,
   "type": "workspace",
-  "name": "2:comms",
+  "name": "2:comm",
   "nodes": [
     {
       "border": "normal",
@@ -69,7 +69,7 @@
   "layout": "splith",
   "percent": null,
   "type": "workspace",
-  "name": "3:util",
+  "name": "10:util",
   "nodes": [
     {
       "border": "normal",
@@ -81,11 +81,11 @@
          "x": 0,
          "y": 0
       },
-      "name": "kitty",
+      "name": "thunderbird",
       "percent": 0.5,
       "swallows": [
          {
-         "class": "^kitty$"
+         "class": "^Thunderbird$"
          }
       ],
       "type": "con"

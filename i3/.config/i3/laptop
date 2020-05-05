@@ -1,5 +1,5 @@
-# Lock screen
-bindsym Mod4+l exec i3lock -e -i ~/.config/i3/lockscreen-laptop.png
+# Create screen lock hotkey
+bindsym Mod4+l exec dm-tool switch-to-greeter
 
 # Enable brightness control keys
 bindsym XF86MonBrightnessDown exec brightnessctl set 20%-
@@ -11,3 +11,13 @@ bar {
         status_command exec ~/.config/i3status/net-speed.sh config-laptop
         # $i3-theme-bar
 }
+
+# NetworkManager is the most popular way to manage wireless networks on Linux,
+# and nm-applet is a desktop environment-independent system tray GUI for it.
+exec --no-startup-id nm-applet
+
+# Selectable screenshot to clipboard (frozen)
+bindsym Print exec maim | feh - -x & maim -s | xclip -selection clipboard -t image/png
+
+# Always start feh fullscreen (needed for screenshots w/feh)
+for_window [class="feh"] fullscreen enable
