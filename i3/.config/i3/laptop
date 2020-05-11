@@ -1,6 +1,3 @@
-# Create screen lock hotkey
-bindsym Mod4+l exec dm-tool switch-to-greeter
-
 # Enable brightness control keys
 bindsym XF86MonBrightnessDown exec brightnessctl set 20%-
 bindsym XF86MonBrightnessUp exec brightnessctl set 20%+

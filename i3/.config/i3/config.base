@@ -8,6 +8,9 @@
 set $mod Mod1
 set $meta Mod4
 
+# Create screen lock hotkey
+bindsym Mod4+l exec i3lock-multimonitor -i ~/.config/i3/lockscreen.png
+
 # Selectable screenshot to clipboard (live)
 bindsym $mod+p exec maim -s | xclip -selection clipboard -t image/png
 
@@ -15,8 +18,7 @@ bindsym $mod+p exec maim -s | xclip -selection clipboard -t image/png
 bindsym $mod+Shift+p exec maim -i $(xdotool getactivewindow) | xclip -selection clipboard -t image/png
 
 # Media player controls
-bindsym XF86AudioPlay exec playerctl play
-bindsym XF86AudioPause exec playerctl pause
+bindsym XF86AudioPlay exec playerctl play-pause
 bindsym XF86AudioNext exec playerctl next
 bindsym XF86AudioPrev exec playerctl previous
 
@@ -52,7 +54,7 @@ focus_on_window_activation focus
 
 # xss-lock grabs a logind suspend inhibit lock and will use i3lock to lock the
 # screen before suspend. Use loginctl lock-session to lock your screen.
-exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
+exec --no-startup-id xss-lock --transfer-sleep-lock -- dm-tool switch-to-greeter
 
 # Use Mouse+$mod to drag floating windows to their wanted position
 floating_modifier $mod

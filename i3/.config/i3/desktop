@@ -14,9 +14,6 @@ bar {
         # $i3-theme-bar
 }
 
-# Create screen lock hotkey
-bindsym Mod4+l exec dm-tool switch-to-greeter
-
 # Set up layout
 # exec --no-startup-id "i3-msg 'workspace 10:util; append_layout ~/.config/i3/32in-layout.json'"
 assign [class="^discord$"] $ws9
