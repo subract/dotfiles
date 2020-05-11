@@ -9,7 +9,7 @@ set $mod Mod1
 set $meta Mod4
 
 # Create screen lock hotkey
-bindsym Mod4+l exec i3lock-multimonitor -i ~/.config/i3/lockscreen.png
+bindsym Mod4+l exec i3lock-multimonitor -i ~/.config/i3/lockscreen.jpg
 
 # Selectable screenshot to clipboard (live)
 bindsym $mod+p exec maim -s | xclip -selection clipboard -t image/png
@@ -54,7 +54,7 @@ focus_on_window_activation focus
 
 # xss-lock grabs a logind suspend inhibit lock and will use i3lock to lock the
 # screen before suspend. Use loginctl lock-session to lock your screen.
-exec --no-startup-id xss-lock --transfer-sleep-lock -- dm-tool switch-to-greeter
+exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock-multimonitor -i ~/.config/i3/lockscreen.jpg
 
 # Use Mouse+$mod to drag floating windows to their wanted position
 floating_modifier $mod
