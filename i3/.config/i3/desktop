@@ -35,3 +35,5 @@ exec --no-startup-id nextcloud
 exec --no-startup-id protonmail-bridge --no-window
 exec --no-startup-id autotiling
 exec --no-startup-id pasystray
+exec --no-startup-id lxpolkit
+exec --no-startup-id nitrogen --restore
