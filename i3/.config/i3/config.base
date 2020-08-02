@@ -37,6 +37,9 @@ bindsym $meta+f exec firefox
 bindsym $meta+Shift+f exec firefox --private-window
 bindsym $mod+Return exec kitty
 
+# Power hotkeys
+bindsym $meta+s exec --no-startup-id systemctl suspend
+
 # start dmenu (a program launcher)
 # bindsym $mod+d exec dmenu_run
 # There also is the (new) i3-dmenu-desktop which only displays applications

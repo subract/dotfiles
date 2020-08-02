@@ -30,10 +30,11 @@ assign [class="^KeePassXC$"] $ws10
 # Assign util workspace to 32in monitor
 # workspace $ws10 output $mon32
 
-# Tray programs
+# Tray & background programs
 exec --no-startup-id nextcloud
 exec --no-startup-id protonmail-bridge --no-window
 exec --no-startup-id autotiling
 exec --no-startup-id pasystray
 exec --no-startup-id lxpolkit
 exec --no-startup-id nitrogen --restore
+exec --no-startup-id snfs --ext .md ~/notes
