@@ -17,7 +17,7 @@ bar {
 # Set up layout
 # exec --no-startup-id "i3-msg 'workspace 10:util; append_layout ~/.config/i3/32in-layout.json'"
 assign [class="^discord$"] $ws9
-assign [class="^KeePassXC$"] $ws10
+assign [class="^KeePassXC$" window_type="normal"] $ws10
 
 # Startup tasks
 # exec --no-startup-id \
@@ -37,5 +37,5 @@ exec --no-startup-id autotiling
 exec --no-startup-id pasystray
 exec --no-startup-id lxpolkit
 exec --no-startup-id nitrogen --restore
-exec --no-startup-id snfs --ext .md ~/notes
+# exec --no-startup-id snfs --ext .md ~/notes
 exec --no-startup-id redshift-gtk
