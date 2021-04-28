@@ -1,4 +1,9 @@
+# Aliases
 alias nano="echo Ahem\?"
+alias aplay="ansible-playbook"
 alias icat="kitty +kitten icat"
 alias ssh="kitty +kitten ssh"
 alias calc="qalc"
+
+# Command-not-found support (requires "pkgfile" package)
+source /usr/share/doc/pkgfile/command-not-found.zsh

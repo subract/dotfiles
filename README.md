@@ -8,7 +8,7 @@ Clone into some directory immediately inside the user's home directory, then use
 
 ### ssh-agent
 
-This package creates a systemd user service that starts an SSH agent, and a `.pam_environment` file that sets the appropriate environment variable. After installing the packer, run 
+This package creates a systemd user service that starts an SSH agent, and a `.pam_environment` file that sets the appropriate environment variable. After installing the package, run 
 ```bash
 systemctl --user enable --now ssh-agent
 ```
