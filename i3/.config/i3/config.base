@@ -36,6 +36,7 @@ bindsym $meta+e exec thunar
 bindsym $meta+f exec firefox
 bindsym $meta+Shift+f exec firefox --private-window
 bindsym $mod+Return exec kitty
+bindsym $meta+a exec switch_audio_out
 
 # Power hotkeys
 bindsym $meta+s exec --no-startup-id systemctl suspend
