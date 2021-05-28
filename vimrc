@@ -1,13 +1,59 @@
-set expandtab
-set softtabstop=2
-set shiftwidth=2
+set nocompatible
+
+" Automatically indent file
 set autoindent
-filetype plugin indent on
+
 syntax on
 
-" Enable search highlighting and incremental searching
-set incsearch
+" Current line shows actual number
+set number
+" All other lines show distance from current line
+set relativenumber
+" Displays line/column number in bottom right hand corner.
+set ruler
+" Enables filename/ruler for vim.
+set laststatus=2
+
+" Wrap text visually
+set wrap
+
+" Expandtab inserts spaces when Tab is pressed. 2 spaces per tab.
+set expandtab
+set tabstop=2
+set shiftwidth=2
+set softtabstop=2
+
+" Round indents to the nearest multiple of shiftwidth.
+set shiftround
+
+" Keep 3 lines below the cursor when scrolling.
+set scrolloff=3
+
+" Allow backspacing over autoindents, end of lines, and the beginning of lines.
+set backspace=indent,eol,start
+
+" Allow j and k to always move the cursor one line up or down, even in wrapped
+" paragraphs.
+nnoremap <silent> <expr> j (v:count == 0 ? 'gj' : 'j')
+nnoremap <silent> <expr> k (v:count == 0 ? 'gk' : 'k')
+
+" Shows what mode you're currently in- ie, insert mode, visual mode
+set showmode
+" Shows what command is currently being typed.
+set showcmd
+
+" Enter inserts new line
+noremap <CR> o<Esc>
+
+" Smart searching- case insensitive, shortcuts abound.
+nnoremap / /\v
+vnoremap / /\v
 set hlsearch
+set incsearch
+set ignorecase
+set smartcase
+set showmatch
+
 " Disable arrow keys
 noremap <Up> <Nop>
 noremap <Down> <Nop>
