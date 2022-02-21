@@ -189,11 +189,11 @@ client.unfocused #222133 #222133 #AAAAAA #A074C4
 client.urgent #CE4045 #CE4045 #e7d8b1 #DCCD69
 # Assign aliases for displays
 
-set $mon27 DP-2
-set $mon32 DP-0
+set $mon27 DP-4
+set $mon32 DP-2
  
- # Set 27in monitor to 144Hz
-exec xrandr --output $mon27 --mode 2560x1440 --rate 144
+ # Configre display placement
+exec xrandr --output $mon27 --mode 2560x1440 --rate 165 --pos 0x400 --output $mon32 --mode 3840x2160 --rate 60 --pos 2560x0
 
 # Start i3bar to display a workspace bar (plus the system information i3status
 # finds out, if available)
