@@ -1,13 +1,11 @@
 # Assign aliases for displays
-
 set $mon27 DP-4
 set $mon32 DP-2
  
  # Configre display placement
 exec xrandr --output $mon27 --mode 2560x1440 --rate 165 --pos 0x400 --primary --output $mon32 --mode 3840x2160 --rate 60 --pos 2560x0
 
-# Start i3bar to display a workspace bar (plus the system information i3status
-# finds out, if available)
+# Start i3bar to display a workspace bar
 bar {
         tray_output primary
         status_command exec ~/.config/i3status/net-speed.sh config-desktop
@@ -15,20 +13,8 @@ bar {
 }
 
 # Set up layout
-# exec --no-startup-id "i3-msg 'workspace 10:util; append_layout ~/.config/i3/32in-layout.json'"
 assign [class="^discord$"] $ws9
 assign [class="^KeePassXC$" window_type="normal"] $ws10
-
-# Startup tasks
-# exec --no-startup-id \
-# "i3-msg 'workspace 10:util output DP-0; workspace 10; append_layout ~/.config/i3/32in-layout.json; exec thunar; exec discord; exec keepassxc; workspace 1:web; exec firefox;'"
-# exec firefox
-# exec discord
-# exec keepassxc
-# exec thunderbird
-
-# Assign util workspace to 32in monitor
-# workspace $ws10 output $mon32
 
 # Tray & background programs
 exec --no-startup-id nextcloud
@@ -37,7 +23,6 @@ exec --no-startup-id autotiling
 exec --no-startup-id pasystray
 exec --no-startup-id lxpolkit
 exec --no-startup-id nitrogen --restore
-# exec --no-startup-id snfs --ext .md ~/notes
 exec --no-startup-id redshift-gtk
 exec --no-startup-id pacman -Qqe > ~/nc-small/Backups/Config/pacman/pallene.pkglist
 exec --no-startup-id nmapplet
