@@ -13,7 +13,7 @@
 #
 # i3 config looks like this:
 # bar {
-#   status_command exec /usr/share/doc/i3status/contrib/net-speed.sh
+#   status_command exec /usr/share/doc/i3status/contrib/net-speed.sh config-file
 # }
 #
 # Single interface:
@@ -71,7 +71,7 @@ update_rate() {
   last_tx=$tx
 }
 
-i3status | (read line && echo "$line" && read line && echo "$line" && read line && echo "$line" && update_rate && while :
+i3status -c ~/.config/i3status/$1 | (read line && echo "$line" && read line && echo "$line" && read line && echo "$line" && update_rate && while :
 do
   read line
   update_rate
