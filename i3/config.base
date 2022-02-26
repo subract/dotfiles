@@ -181,5 +181,18 @@ mode "resize" {
 
 bindsym $mod+r mode "resize"
 
+# Set up layout
+assign [class="^discord$"] $ws9
+assign [class="^KeePassXC$" window_type="normal"] $ws10
+
+# Tray & background programs
+exec --no-startup-id nextcloud
+exec --no-startup-id autotiling
+exec --no-startup-id pasystray
+exec --no-startup-id lxpolkit
+exec --no-startup-id nitrogen --restore
+exec --no-startup-id redshift-gtk
+exec --no-startup-id nmapplet
+
 # Comments needed for j4-make-config
 # $i3-theme-window

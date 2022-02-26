@@ -9,21 +9,6 @@ bar {
         # $i3-theme-bar
 }
 
-# Set up layout
-assign [class="^discord$"] $ws9
-assign [class="^KeePassXC$"] $ws10
-
-# Selectable screenshot to clipboard (frozen)
-bindsym Print exec maim | feh - -x & maim -s | xclip -selection clipboard -t image/png
-
-# Always start feh fullscreen (needed for screenshots w/feh)
-for_window [class="feh"] fullscreen enable
-
-exec --no-startup-id nextcloud
-exec --no-startup-id protonmail-bridge --no-window
-exec --no-startup-id autotiling
-exec --no-startup-id pasystray
-exec --no-startup-id lxpolkit
-exec --no-startup-id nitrogen --restore
-exec --no-startup-id redshift-gtk
-
+# Tray & background programs
+exec --no-startup-id pacman -Qqe > ~/Nextcloud/Backups/Config/pacman/fornax.pkglist
+exec --no-startup-id nmapplet
