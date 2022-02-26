@@ -13,7 +13,7 @@
 #
 # i3 config looks like this:
 # bar {
-#   status_command exec /usr/share/doc/i3status/contrib/net-speed.sh config-file
+#   status_command exec /usr/share/doc/i3status/contrib/net-speed.sh
 # }
 #
 # Single interface:
@@ -24,7 +24,7 @@
 #
 
 # Auto detect interfaces
-ifaces=$(ls /sys/class/net | grep -E '^(eth|wlan|enp|enx|wlp)')
+ifaces=$(ls /sys/class/net | grep -E '^(eno|enp|ens|enx|eth|wlan|wlp)')
 
 last_time=0
 last_rx=0
@@ -71,7 +71,7 @@ update_rate() {
   last_tx=$tx
 }
 
-i3status -c ~/.config/i3status/$1 | (read line && echo "$line" && read line && echo "$line" && read line && echo "$line" && update_rate && while :
+i3status | (read line && echo "$line" && read line && echo "$line" && read line && echo "$line" && update_rate && while :
 do
   read line
   update_rate

@@ -9,10 +9,6 @@ bar {
         # $i3-theme-bar
 }
 
-# NetworkManager is the most popular way to manage wireless networks on Linux,
-# and nm-applet is a desktop environment-independent system tray GUI for it.
-exec --no-startup-id nm-applet
-
 # Set up layout
 assign [class="^discord$"] $ws9
 assign [class="^KeePassXC$"] $ws10
