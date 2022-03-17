@@ -14,4 +14,3 @@ bindsym XF86KbdBrightnessUp exec brightnessctl -d asus::kbd_backlight set 1+
 
 # Tray & background programs
 exec --no-startup-id pacman -Qqe > ~/Nextcloud/Backups/Config/pacman/fornax.pkglist
-exec --no-startup-id nmapplet
