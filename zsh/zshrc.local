@@ -1,6 +1,6 @@
 # Aliases
 alias nano="echo Ahem\?"
-alias ap="ansible-playbook"
+alias ap="ansible-playbook --ask-vault-pass"
 alias icat="kitty +kitten icat"
 alias ssh="kitty +kitten ssh"
 alias calc="qalc"

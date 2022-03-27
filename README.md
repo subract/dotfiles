@@ -1,8 +1,8 @@
-# Dotfiles
+# subract's dotfiles
 
 # Usage
 
-Clone into some directory immediately inside the user's home directory, then use `stow <packagename>`
+Symlink as needed to appropriate locations - I use Ansible to automate this task
 
 ## Package notes
 
