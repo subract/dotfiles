@@ -28,6 +28,14 @@ bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT
 bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -10% && $refresh_i3status
 bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle && $refresh_i3status
 
+# Enable monitor brightness control keys
+bindsym XF86MonBrightnessDown exec brightnessctl set 20%-
+bindsym XF86MonBrightnessUp exec brightnessctl set 20%+
+
+# Enable keyboard brightness control keys
+bindsym XF86KbdBrightnessDown exec brightnessctl -d asus::kbd_backlight set 1-
+bindsym XF86KbdBrightnessUp exec brightnessctl -d asus::kbd_backlight set 1+
+
 # Jump to urgent window
 bindsym $mod+x [urgent=latest] focus
 
@@ -194,6 +202,14 @@ exec --no-startup-id nitrogen --restore
 exec --no-startup-id /usr/lib/geoclue-2.0/demos/agent
 exec --no-startup-id redshift-gtk
 exec --no-startup-id nm-applet
+exec --no-startup-id protonmail-bridge --no-window
 
-# Comments needed for j4-make-config
-# $i3-theme-window
+# Start Polybar
+exec_always --no-startup-id $HOME/.config/polybar/launch.sh
+
+# Purple theme
+# class                 border  backgr. text    indicator
+client.focused          #664477 #664477 #cccccc #e7d8b1
+client.focused_inactive #e7d8b1 #e7d8b1 #181715 #A074C4
+client.unfocused        #222133 #222133 #AAAAAA #A074C4
+client.urgent           #CE4045 #CE4045 #e7d8b1 #DCCD69

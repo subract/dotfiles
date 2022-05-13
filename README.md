@@ -2,7 +2,7 @@
 
 # Usage
 
-Symlink as needed to appropriate locations - I use Ansible to automate this task
+Symlink as needed to appropriate locations - I use Ansible to automate this task.
 
 ## Package notes
 
