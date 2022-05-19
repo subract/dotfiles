@@ -5,6 +5,7 @@ alias icat="kitty +kitten icat"
 alias ssh="kitty +kitten ssh"
 alias calc="qalc"
 alias fd="fd -L"
+alias diff="diff --color"
 
 # Command-not-found support
 function command_not_found_handler {
