@@ -6,6 +6,7 @@ alias ssh="kitty +kitten ssh"
 alias calc="qalc"
 alias fd="fd -L"
 alias diff="diff --color"
+alias temp="sensors 2> /dev/null | grep Tctl"
 
 # Command-not-found support
 function command_not_found_handler {
