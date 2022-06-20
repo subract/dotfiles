@@ -39,6 +39,10 @@ bindsym XF86KbdBrightnessUp exec brightnessctl -d asus::kbd_backlight set 1+
 # Jump to urgent window
 bindsym $mod+x [urgent=latest] focus
 
+# Move workspace between monitors
+bindsym $mod+Left move workspace to output left
+bindsym $mod+Right move workspace to output right
+
 # Program hotkeys
 bindsym $meta+e exec thunar
 bindsym $meta+f exec firefox
