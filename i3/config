@@ -211,9 +211,13 @@ exec --no-startup-id protonmail-bridge --no-window
 # Start Polybar
 exec_always --no-startup-id $HOME/.config/polybar/launch.sh
 
-# Purple theme
-# class                 border  backgr. text    indicator
-client.focused          #664477 #664477 #cccccc #e7d8b1
-client.focused_inactive #e7d8b1 #e7d8b1 #181715 #A074C4
-client.unfocused        #222133 #222133 #AAAAAA #A074C4
-client.urgent           #CE4045 #CE4045 #e7d8b1 #DCCD69
+#catppuccin
+# class                 border  backgr. text    indicator child_border
+client.focused          #F5A97F #F5A97F #1a1826 #F5A97F   #F5A97F
+client.focused_inactive #F4DBD6 #F4DBD6 #1a1826 #F4DBD6   #F4DBD6
+client.unfocused        #333333 #222222 #888888 #292d2e   #222222
+client.urgent           #EE99A0 #EE99A0 #ffffff #EE99A0   #EE99A0
+client.placeholder      #000000 #0c0c0c #ffffff #000000   #0c0c0c
+
+client.background       #ffffff
+
