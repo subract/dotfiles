@@ -8,6 +8,7 @@ alias fd="fd -L"
 alias diff="diff --color"
 alias temp="sensors 2> /dev/null | grep Tctl"
 alias update="cd ~/code/ansible && ap main.yml --limit $HOST"
+alias invoke="sudo rmmod nvidia_uvm; sudo modprobe nvidia_uvm; cd ~/invokeai && echo 2 | ./invoke.sh"
 
 # Command-not-found support
 function command_not_found_handler {
