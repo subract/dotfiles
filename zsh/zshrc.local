@@ -10,6 +10,9 @@ alias temp="sensors 2> /dev/null | grep Tctl"
 alias systemctl="systemctl --no-pager"
 alias update="cd ~/code/ansible && ap main.yml --limit $HOST"
 
+# Speed up making things by letting make use (nearly) the whole CPU 
+MAKEFLAGS="-j$(expr $(nproc) - 2)"
+
 # Command-not-found support
 function command_not_found_handler {
     local purple='\e[1;35m' bright='\e[0;1m' green='\e[1;32m' reset='\e[0m'

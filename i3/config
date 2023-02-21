@@ -28,8 +28,8 @@ include custom.conf
 
 focus_on_window_activation focus
 
-# Use Mouse+$mod to drag floating windows to their wanted position
-floating_modifier $mod
+# Use Mouse+Shift+$mod to drag floating windows to their wanted position
+floating_modifier $mod+Shift
 
 # kill focused window
 bindsym $mod+Shift+q kill
