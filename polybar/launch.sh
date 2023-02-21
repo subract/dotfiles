@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # https://github.com/polybar/polybar/issues/763#issuecomment-450940924
-# Launches with tray on DP-4 if connected, DP-2 otherwise
+# Launches with tray on DP-2 if connected, eDP-1 otherwise
 (
   flock 200
 
@@ -13,7 +13,7 @@
   tray_output=DP-2
 
   for m in $outputs; do
-    if [[ $m == "DP-4" ]]; then
+    if [[ $m == "eDP-1" ]]; then
         tray_output=$m
     fi
   done

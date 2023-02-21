@@ -9,6 +9,7 @@ alias diff="kitty +kitten diff"
 alias temp="sensors 2> /dev/null | grep Tctl"
 alias systemctl="systemctl --no-pager"
 alias update="cd ~/code/ansible && ap main.yml --limit $HOST"
+alias invoke="sudo rmmod nvidia_uvm; sudo modprobe nvidia_uvm; cd ~/invokeai && echo 2 | ./invoke.sh"
 
 # Speed up making things by letting make use (nearly) the whole CPU 
 MAKEFLAGS="-j$(expr $(nproc) - 2)"
