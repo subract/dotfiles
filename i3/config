@@ -5,8 +5,8 @@
 
 # Keybinds ------------------------------------------------
 
-set $mod Mod1
-set $meta Mod4
+set $mod Mod4
+# set $meta Mod4
 
 # Jump to urgent window
 bindsym $mod+x [urgent=latest] focus
