@@ -66,3 +66,6 @@ cmap w!! w !sudo tee > /dev/null %
 " Enable markdown folding, start wtih all folds expanded
 let g:markdown_folding = 1
 au FileType markdown setlocal foldlevel=99
+
+" Set filetype for script files
+au BufRead,BufNewFile *.script set filetype=sh
