@@ -34,5 +34,5 @@ i3lock-fancy-rapid 150 20 \
 --screen 1                   \
 --clock                      \
 --indicator                  \
---time-str="%H:%M"           \
+--time-str="%l:%M"           \
 --date-str="%A %y%m%d"     \
