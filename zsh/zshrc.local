@@ -16,10 +16,20 @@ MAKEFLAGS="-j$(expr $(nproc) - 2)"
 # Put a space at the start of a command to make sure it doesn't get added to the history.
 setopt histignorespace
 
-# https://unix.stackexchange.com/a/539771
-alias oops=' my_remove_last_history_entry'
+alias llama="~/tmp/llama.cpp/main -m ~/tmp/llama.cpp/models/llama-2-13b-chat.ggmlv3.q4_0.bin \
+  --color \
+  --ctx_size 2048 \
+  -n -1 \
+  -ins -b 256 \
+  --top_k 10000 \
+  --temp 0.2 \
+  --repeat_penalty 1.1 \
+  -t 8"
 
-my_remove_last_history_entry() {
+# https://unix.stackexchange.com/a/539771
+alias oops=' remove_last_history_entry'
+
+remove_last_history_entry() {
     # This sub-function checks if the argument passed is a number.
     # Thanks to @yabt on stackoverflow for this :).
     is_int() ( return $(test "$@" -eq "$@" > /dev/null 2>&1); )
