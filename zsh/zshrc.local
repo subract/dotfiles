@@ -26,6 +26,9 @@ alias llama="~/tmp/llama.cpp/main -m ~/tmp/llama.cpp/models/llama-2-13b-chat.ggm
   --repeat_penalty 1.1 \
   -t 8"
 
+# Add go paths to path
+export PATH="$PATH:$(go env GOBIN):$(go env GOPATH)/bin"
+
 # https://unix.stackexchange.com/a/539771
 alias oops=' remove_last_history_entry'
 
