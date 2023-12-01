@@ -10,6 +10,9 @@ alias systemctl="systemctl --no-pager"
 alias update="cd ~/code/ansible && ap main.yml --limit $HOST"
 alias invoke="sudo rmmod nvidia_uvm; sudo modprobe nvidia_uvm; cd ~/invokeai && echo 2 | ./invoke.sh"
 
+# Make Ctrl+U work as expected
+bindkey \^U backward-kill-line
+
 # Speed up making things by letting make use (nearly) the whole CPU 
 MAKEFLAGS="-j$(expr $(nproc) - 2)"
 
