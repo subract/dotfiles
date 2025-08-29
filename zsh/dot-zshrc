@@ -1,3 +1,10 @@
+# load oh-my-zsh
+export ZSH="$HOME/.oh-my-zsh"
+ZSH_THEME="agnoster"
+plugins=(git)
+
+source $ZSH/oh-my-zsh.sh
+
 # Aliases
 alias nano="echo Ahem\?"
 alias ap="ansible-playbook"
@@ -6,7 +13,11 @@ alias calc="qalc"
 alias fd="fd -L"
 alias temp="sensors 2> /dev/null | grep Tctl"
 alias systemctl="systemctl --no-pager"
+
+# kubernetes things
 alias k="kubectl"
+# allow using krew plugins
+export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 
 # Always use dotfile preprocessing with stow
 alias stow="stow --dotfiles"
