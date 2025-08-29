@@ -13,6 +13,7 @@ alias calc="qalc"
 alias fd="fd -L"
 alias temp="sensors 2> /dev/null | grep Tctl"
 alias systemctl="systemctl --no-pager"
+alias j="just"
 
 # kubernetes things
 alias k="kubectl"
