@@ -6,9 +6,9 @@ set autoindent
 syntax on
 
 " Current line shows actual number
-set number
+" set number
 " All other lines show distance from current line
-set relativenumber
+" set relativenumber
 " Displays line/column number in bottom right hand corner.
 set ruler
 " Enables filename/ruler for vim.
