@@ -4,33 +4,28 @@ alias ap="ansible-playbook"
 alias icat="kitty +kitten icat"
 alias calc="qalc"
 alias fd="fd -L"
-alias diff="kitty +kitten diff"
 alias temp="sensors 2> /dev/null | grep Tctl"
 alias systemctl="systemctl --no-pager"
-alias update="cd ~/code/ansible && ap main.yml --limit $HOST"
-alias invoke="sudo rmmod nvidia_uvm; sudo modprobe nvidia_uvm; cd ~/invokeai && echo 2 | ./invoke.sh"
+alias k="kubectl"
+
+# Always use dotfile preprocessing with stow
+alias stow="stow --dotfiles"
+
+# Enable completion
+# https://stackoverflow.com/questions/66338988/complete13-command-not-found-compdef
+autoload -Uz compinit
+compinit
 
 # Make Ctrl+U work as expected
 bindkey \^U backward-kill-line
 
-# Speed up making things by letting make use (nearly) the whole CPU 
-MAKEFLAGS="-j$(expr $(nproc) - 2)"
-
 # Put a space at the start of a command to make sure it doesn't get added to the history.
 setopt histignorespace
 
-alias llama="~/tmp/llama.cpp/main -m ~/tmp/llama.cpp/models/llama-2-13b-chat.ggmlv3.q4_0.bin \
-  --color \
-  --ctx_size 2048 \
-  -n -1 \
-  -ins -b 256 \
-  --top_k 10000 \
-  --temp 0.2 \
-  --repeat_penalty 1.1 \
-  -t 8"
-
 # Add go paths to path
-export PATH="$PATH:$(go env GOBIN):$(go env GOPATH)/bin"
+if command -v go >/dev/null 2>&1; then
+  export PATH="$PATH:$(go env GOBIN):$(go env GOPATH)/bin"
+fi
 
 # https://unix.stackexchange.com/a/539771
 alias oops=' remove_last_history_entry'
@@ -73,3 +68,6 @@ remove_last_history_entry() {
 
     fc -R # read history file.
 }
+
+# Load .zshrc.local, if it exists
+[ -f ~/.zshrc.local ] && source ~/.zshrc.local
