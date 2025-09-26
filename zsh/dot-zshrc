@@ -15,6 +15,11 @@ alias temp="sensors 2> /dev/null | grep Tctl"
 alias systemctl="systemctl --no-pager"
 alias j="just"
 
+# Human-readable sizes
+alias df='df -h'
+alias du='du -h'
+alias free='free -h'
+
 # kubernetes things
 alias k="kubectl"
 # allow using krew plugins
@@ -33,6 +38,31 @@ bindkey \^U backward-kill-line
 
 # Put a space at the start of a command to make sure it doesn't get added to the history.
 setopt histignorespace
+
+# History settings
+setopt HIST_IGNORE_SPACE      # Don't save commands starting with spaces
+setopt HIST_IGNORE_DUPS       # Don't save sequential duplicate entries
+setopt HIST_FIND_NO_DUPS      # Hide dups when searching history
+setopt HIST_REDUCE_BLANKS     # Remove superfluous blanks from history items
+setopt INC_APPEND_HISTORY     # Save history entries as soon as they are entered
+setopt SHARE_HISTORY          # Share history between different instances
+setopt HIST_VERIFY            # Don't execute immediately after history expansion
+
+# Completion settings
+
+# Case-insensitive completion
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
+
+# Highlight selection in completion menu
+zstyle ':completion:*' menu select
+
+# Better completion for kill command
+zstyle ':completion:*:*:kill:*' menu yes select
+zstyle ':completion:*:kill:*' force-list always
+
+# Group completions by type
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*:descriptions' format '%B%d%b'
 
 # Add go paths to path
 if command -v go >/dev/null 2>&1; then
