@@ -64,6 +64,11 @@ zstyle ':completion:*:kill:*' force-list always
 zstyle ':completion:*' group-name ''
 zstyle ':completion:*:descriptions' format '%B%d%b'
 
+# Add paths on MacOS
+if [[ "$(uname)" == "Darwin" ]]; then
+  export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+fi
+
 # Add go paths to path
 if command -v go >/dev/null 2>&1; then
   export PATH="$PATH:$(go env GOBIN):$(go env GOPATH)/bin"
