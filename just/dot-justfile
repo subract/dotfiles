@@ -1,3 +1,6 @@
+# Global justfile
+# Recipes in here should often use [no-cd]
+
 default:
   just --list
 
@@ -5,3 +8,28 @@ default:
 get-cert address:
   echo | openssl s_client -showcerts -connect {{address}}:443 | openssl x509 -inform pem -noout -text
 
+# Push to GitHub as well as current remote URL
+[no-cd]
+git-github:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    REPO_NAME=$(basename -s .git $(git config --get remote.origin.url))
+    ORIGIN_URL=$(git config --get remote.origin.url)
+    git remote set-url --add --push origin "git@github.com:subract/$REPO_NAME.git"
+    git remote set-url --add --push origin "$ORIGIN_URL"
+    # Show the remote configuration
+    echo "GitHub added to origin remote. Pushing to origin will now push to both remotes."
+    echo "Current remote configuration:"
+    git remote -v
+
+# Upload a file to Backblaze B2 and copy its public URL to the clipboard
+upload file:
+    # Upload the file to B2 (uses the same filename in the bucket root)
+    rclone copy "{{file}}" "b2-shared:$(basename "{{file}}")"
+    # Generate a public URL and copy to clipboard (macOS)
+    rclone link "b2-shared:$(basename "{{file}}")" | pbcopy
+    # For Linux, replace `pbcopy` with: | xclip -selection clipboard
+
+# Flush system DNS cache on mac
+flush:
+  dscacheutil -flushcache; sudo killall -HUP mDNSResponder
