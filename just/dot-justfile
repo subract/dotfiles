@@ -1,0 +1,7 @@
+default:
+  just --list
+
+# Get the certificate for an endpoint (no https://)
+get-cert address:
+  echo | openssl s_client -showcerts -connect {{address}}:443 | openssl x509 -inform pem -noout -text
+
