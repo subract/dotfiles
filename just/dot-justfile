@@ -6,7 +6,7 @@ default:
 
 # Get the certificate for an endpoint (no https://)
 get-cert address:
-  echo | openssl s_client -showcerts -connect {{address}}:443 | openssl x509 -inform pem -noout -text
+  echo | openssl s_client -showcerts -servername {{address}} -connect {{address}}:443 | openssl x509 -inform pem -noout -text
 
 # Push to GitHub as well as current remote URL
 [no-cd]
