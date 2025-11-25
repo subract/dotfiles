@@ -25,6 +25,9 @@ alias k="kubectl"
 # allow using krew plugins
 export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 
+# use ~/bin for scripts
+export PATH="$HOME/bin:$PATH"
+
 # Always use dotfile preprocessing with stow
 alias stow="stow --dotfiles"
 
@@ -80,6 +83,29 @@ mkcd ()
 {
     mkdir -p -- "$1" &&
        cd -P -- "$1"
+}
+
+# create a temp dir and move there
+# https://codeberg.org/EvanHahn/dotfiles/src/commit/843b9ee13d949d346a4a73ccee2a99351aed285b/home/zsh/.config/zsh/aliases.zsh#L43-L51
+tempe () {
+  cd "$(mktemp -d)"
+  chmod -R 0700 .
+  if [[ $# -eq 1 ]]; then
+    \mkdir -p "$1"
+    cd "$1"
+    chmod -R 0700 .
+  fi
+}
+
+# play sounds based on exit code
+boop () {
+  local last="$?"
+  if [[ "$last" == '0' ]]; then
+    sfx good
+  else
+    sfx bad
+  fi
+  $(exit "$last")
 }
 
 # https://unix.stackexchange.com/a/539771
