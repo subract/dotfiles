@@ -25,8 +25,16 @@ alias k="kubectl"
 # allow using krew plugins
 export PATH="${KREW_ROOT:-$HOME/.krew}/bin:$PATH"
 
+use-kubeconfig() {
+    export KUBECONFIG="$1"
+    echo "KUBECONFIG set to: $KUBECONFIG"
+}
+
 # use ~/bin for scripts
 export PATH="$HOME/bin:$PATH"
+
+# set editor
+export EDITOR=vim
 
 # Always use dotfile preprocessing with stow
 alias stow="stow --dotfiles"
