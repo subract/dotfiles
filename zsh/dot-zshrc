@@ -42,6 +42,7 @@ alias stow="stow --dotfiles"
 
 # Enable completion
 # https://stackoverflow.com/questions/66338988/complete13-command-not-found-compdef
+fpath=(~/.zsh/completions $fpath)
 autoload -Uz compinit
 compinit
 
@@ -146,14 +147,13 @@ remove_last_history_entry() {
         fi
     fi
 
-    # Make the number negative, since head -n needs to be negative.
-    lines_to_remove="-${lines_to_remove}"
-
     fc -W # write current shell's history to the history file.
 
     # Get the files contents minus the last entry(head -n -1 does that)
-    #cat $history_file | head -n -1 &> $history_temp_file
-    cat $history_file | head -n "${lines_to_remove}" &> $history_temp_file
+    total_lines=$(wc -l < "$history_file")
+    keep_lines=$((total_lines - lines_to_remove))
+    sed -n "1,${keep_lines}p" "$history_file" > "$history_temp_file"
+
     mv "$history_temp_file" "$history_file"
 
     fc -R # read history file.
