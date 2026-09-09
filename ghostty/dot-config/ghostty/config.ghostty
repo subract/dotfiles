@@ -16,3 +16,5 @@ font-style = Medium
 font-size = 14
 font-thicken = true
 
+clipboard-paste-protection = false
+clipboard-trim-trailing-spaces = true
