@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""Print total size of files in the current directory, grouped by extension."""
+
+import os
+import sys
+from collections import defaultdict
+
+
+GROUPS = {
+    "Video": {".mp4", ".mov", ".avi", ".mkv", ".m4v", ".wmv", ".webm", ".mpg", ".mpeg", ".3gp", ".mts", ".m2ts", ".flv", ".lrv"},
+    "Raw img": {".raw", ".cr2", ".cr3", ".nef", ".arw", ".dng", ".orf", ".rw2", ".pef", ".srw", ".raf", ".3fr", ".erf", ".kdc", ".mrw", ".x3f", ".gpr"},
+    "Image": {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".tif", ".webp", ".heic", ".heif", ".svg"},
+    "Audio": {".mp3", ".wav", ".flac", ".aac", ".ogg", ".m4a", ".wma", ".aiff", ".aif", ".opus", ".alac", ".au"},
+}
+
+
+def group_for(ext):
+    for group, exts in GROUPS.items():
+        if ext in exts:
+            return group
+    return "Other"
+
+
+def human_size(n):
+    for unit in ("B", "KB", "MB", "GB", "TB", "PB"):
+        if n < 1024 or unit == "PB":
+            return f"{n:.0f}{unit}" if n == int(n) else f"{n:.1f}{unit}"
+        n /= 1024
+
+
+def main():
+    directory = sys.argv[1] if len(sys.argv) > 1 else "."
+    totals = defaultdict(lambda: [0, 0])  # ext -> [bytes, count]
+
+    for root, dirs, files in os.walk(directory, followlinks=False):
+        dirs[:] = [d for d in dirs if not os.path.islink(os.path.join(root, d))]
+        for name in files:
+            path = os.path.join(root, name)
+            if os.path.islink(path):
+                continue
+            ext = os.path.splitext(name)[1].lower() or "(no extension)"
+            try:
+                size = os.lstat(path).st_size
+            except OSError:
+                continue
+            totals[ext][0] += size
+            totals[ext][1] += 1
+
+    groups = defaultdict(lambda: [0, 0])
+    for ext, (size, count) in totals.items():
+        g = groups[group_for(ext)]
+        g[0] += size
+        g[1] += count
+
+    print("Group\tFiles\tSize")
+    for group, (size, count) in sorted(groups.items(), key=lambda kv: -kv[1][0]):
+        print(f"{group}\t{count}\t{human_size(size)}")
+
+    print()
+    print("Group\tExtension\tFiles\tSize")
+    for ext, (size, count) in sorted(totals.items(), key=lambda kv: -kv[1][0]):
+        print(f"{group_for(ext)}\t{ext}\t{count}\t{human_size(size)}")
+
+
+if __name__ == "__main__":
+    main()
