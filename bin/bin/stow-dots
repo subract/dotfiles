@@ -1,0 +1,30 @@
+#!/usr/bin/env zsh
+set -e
+set -u
+set -o pipefail
+
+DOTS_DIR="$HOME/.dotfiles"
+
+if ! command -v fzf &> /dev/null; then
+    echo "fzf is not installed."
+    exit 1
+fi
+
+if ! command -v stow &> /dev/null; then
+    echo "stow is not installed."
+    exit 1
+fi
+
+PACKAGES=$(
+    print -l -- $DOTS_DIR/*(N/:t) \
+        | sort \
+        | fzf --multi --height 40% --layout=reverse --border \
+            --header="Select packages to stow (tab to select, esc to quit)" \
+            --preview="ls \"$DOTS_DIR\"/{}"
+)
+
+[[ -z "$PACKAGES" ]] && echo "Done." && exit 0
+
+echo "Stowing:"
+echo "$PACKAGES" | sed 's/^/  /'
+stow --dotfiles -d "$DOTS_DIR" -t "$HOME" ${(f)PACKAGES}
