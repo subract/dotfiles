@@ -1,0 +1,87 @@
+#!/usr/bin/env zsh
+set -e
+set -u
+set -o pipefail
+
+# get dc alias
+[ -f /etc/zsh/zshrc.local ] && source /etc/zsh/zshrc.local
+
+APP_NAME="$1"
+SUBPATH="$2"
+BASE_DIR="/app"
+
+if [[ -z "$APP_NAME" ]]; then
+    # Check if fzf is installed
+    if ! command -v fzf &> /dev/null; then
+        echo "no app name given, fzf not installed"
+        exit 1
+    fi
+
+    APP_NAME=$(find "$BASE_DIR" -maxdepth 1 -mindepth 1 -type d -printf '%P\n' | sort | fzf --height 40% --layout=reverse --border)
+
+    [[ -z "$APP_NAME" ]] && echo "No app selected." && exit 0
+fi
+
+APP_DIR="${BASE_DIR}/${APP_NAME}"
+if [[ ! -d "$APP_DIR" ]]; then
+    echo "Error: Directory $APP_DIR does not exist."
+    exit 1
+fi
+
+if [[ -z "$SUBPATH" ]]; then
+    if ! command -v fzf &> /dev/null; then
+        echo "No subpath given, fzf not installed"
+        exit 1
+    fi
+
+    echo "Select file for $APP_NAME:"
+    SUBPATH=$(cd "$APP_DIR" && find . -type f | sed 's|^\./||' | fzf --height 40% --layout=reverse --border --preview "head -n 20 $APP_DIR/{}")
+
+    [[ -z "$SUBPATH" ]] && echo "No file selected." && exit 0
+fi
+
+# ---
+
+FILE_PATH="${APP_DIR}/${SUBPATH}"
+EDITOR="${EDITOR:-vi}"
+
+# Determine if sudo is required to edit the file
+if [[ -w "$FILE_PATH" ]]; then
+    edit_cmd=($EDITOR)
+else
+    echo "$FILE_PATH is not writable by the current user."
+    echo "Using sudo to launch editor..."
+    # -E preserves the environment (specifically the EDITOR variable)
+    edit_cmd=(sudo -E $EDITOR)
+fi
+
+while true; do
+    echo "------------------------------------------------"
+    echo "Opening $FILE_PATH..."
+
+    "${edit_cmd[@]}" "$FILE_PATH"
+
+    # Capture time immediately before restart to filter logs
+    LOG_START=$(date +%Y-%m-%dT%H:%M:%S)
+
+    echo "Restarting $APP_NAME..."
+    dc restart "$APP_NAME"
+
+    echo "Following logs since restart (Press Ctrl+C to stop following logs)..."
+
+    # Trap Ctrl+C (INT) to stop logs without exiting the script loop
+    trap : INT
+
+    dc logs -f --since "$LOG_START" "$APP_NAME"
+
+    # Reset trap to allow normal exit behavior later
+    trap - INT
+
+    echo ""
+    if read -q "response?Continue editing? (y/n) "; then
+        echo "\n\nEditing again..."
+    else
+        echo "\n\nDone."
+        break
+    fi
+done
