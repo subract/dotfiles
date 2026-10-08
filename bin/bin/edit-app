@@ -9,6 +9,17 @@ APP_NAME="$1"
 SUBPATH="$2"
 BASE_DIR="/app"
 
+if [[ ! -d "$BASE_DIR" ]]; then
+    echo "Error: Directory $BASE_DIR does not exist."
+    exit 1
+fi
+
+# Early root check: if we need to browse apps and can't read BASE_DIR, elevate
+if [[ $EUID -ne 0 ]] && [[ -z "$APP_NAME" ]] && [[ ! -r "$BASE_DIR" ]]; then
+    echo "Root access required to browse $BASE_DIR"
+    exec sudo -E "$0" "$@"
+fi
+
 if [[ -z "$APP_NAME" ]]; then
     # Check if fzf is installed
     if ! command -v fzf &> /dev/null; then
@@ -25,6 +36,11 @@ APP_DIR="${BASE_DIR}/${APP_NAME}"
 if [[ ! -d "$APP_DIR" ]]; then
     echo "Error: Directory $APP_DIR does not exist."
     exit 1
+fi
+
+# Early root check: if we need to browse files and can't read APP_DIR, elevate
+if [[ $EUID -ne 0 ]] && [[ -z "$SUBPATH" ]] && [[ ! -r "$APP_DIR" ]]; then
+    exec sudo -E "$0" "$@"
 fi
 
 if [[ -z "$SUBPATH" ]]; then
@@ -45,7 +61,7 @@ FILE_PATH="${APP_DIR}/${SUBPATH}"
 EDITOR="${EDITOR:-vi}"
 
 # Determine if sudo is required to edit the file
-if [[ -w "$FILE_PATH" ]]; then
+if [[ $EUID -eq 0 ]] || [[ -w "$FILE_PATH" ]]; then
     edit_cmd=($EDITOR)
 else
     echo "$FILE_PATH is not writable by the current user."
