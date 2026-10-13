@@ -17,6 +17,7 @@ fi
 
 PACKAGES=$(
     print -l -- $DOTS_DIR/*(N/:t) \
+        | grep -Ev '^(packages|reference)$' \
         | sort \
         | fzf --multi --height 40% --layout=reverse --border \
             --header="Select packages to stow (tab to select, esc to quit)" \
