@@ -33,9 +33,6 @@ opt.showmatch = true
 -- Persistent undo across sessions
 opt.undofile = true
 
--- Yank/put uses the system clipboard (no "+ prefix needed)
-opt.clipboard = "unnamedplus"
-
 -- Faster CursorHold events (used by some plugins)
 opt.updatetime = 250
 

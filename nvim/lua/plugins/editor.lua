@@ -43,4 +43,21 @@ return {
     "lewis6991/gitsigns.nvim",
     opts = {},
   },
+
+  -- Neogit: full-screen magit-style git interface
+  {
+    "NeogitOrg/neogit",
+    keys = {
+      { "<leader>gg", "<cmd>Neogit<cr>", desc = "Neogit status" },
+    },
+    dependencies = {
+      "nvim-lua/plenary.nvim", -- required by neogit
+      "ibhagwan/fzf-lua", -- reuse for fuzzy selection inside neogit
+    },
+    opts = {
+      integrations = {
+        fzf_lua = true,
+      },
+    },
+  },
 }
