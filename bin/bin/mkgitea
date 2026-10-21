@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+# mkgitea — create a Gitea repo named after the current directory using `tea`,
+# then add it as a remote on the current repo (if there is one).
+# Pushing is left to the user.
+set -e
+set -u
+set -o pipefail
+
+usage() {
+  cat <<EOF
+usage: mkgitea [-p] [-d DESC] [-O OWNER] [-l LOGIN] [-r REMOTE] [--https] [NAME]
+
+Create a new Gitea repository (via the \`tea\` CLI) named after the current
+directory (or NAME), and add it as a remote on the current git repo (must
+already exist — run 'git init' first). You push yourself — this script
+never pushes.
+
+options:
+  -p            create a private repo
+  -d DESC       repo description
+  -O OWNER      create under this owner/org instead of your user
+  -l LOGIN      use a specific tea login
+  -r REMOTE     remote name to add (default: "origin" if free, else "gitea")
+  --https       use the https clone URL instead of ssh
+  -h            show this help
+EOF
+}
+
+private=0
+desc=
+owner=
+login=
+remote_name=
+url_pref=ssh
+name=
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -p) private=1 ;;
+    -d) desc=$2; shift ;;
+    -O) owner=$2; shift ;;
+    -l) login=$2; shift ;;
+    -r) remote_name=$2; shift ;;
+    --https) url_pref=https ;;
+    -h|--help) usage; exit 0 ;;
+    -*) usage 1>&2; echo "mkgitea: unknown option: $1" 1>&2; exit 1 ;;
+    *)  name=$1 ;;
+  esac
+  shift
+done
+
+command -v tea >/dev/null 2>&1 || { echo "mkgitea: tea not found in PATH" 1>&2; exit 1; }
+command -v jq  >/dev/null 2>&1 || { echo "mkgitea: jq not found in PATH" 1>&2; exit 1; }
+
+[ -n "$name" ] || name=$(basename "$PWD")
+name=${name%.git}
+
+# fail fast: must be inside an existing git repo
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+   && ! git rev-parse --is-inside-git-dir >/dev/null 2>&1; then
+  echo "mkgitea: $PWD is not inside a git repository (run 'git init' first)" 1>&2
+  exit 1
+fi
+
+create_args=()
+api_args=()
+[ "$private" = 1 ] && create_args+=(--private)
+[ -n "$desc" ] && create_args+=(--desc "$desc")
+[ -n "$login" ] && create_args+=(--login "$login") && api_args+=(--login "$login")
+[ -n "$owner" ] && create_args+=(--owner "$owner")
+
+# --- create the repo on Gitea -------------------------------------------
+echo "Creating Gitea repo: ${owner:+$owner/}$name ..."
+create_out=$(tea repos create "${create_args[@]}" --name "$name" --output json 2>&1) && created=1 || created=0
+
+if [ "$created" = 1 ]; then
+  # last line of `tea repos create` output is the repo's HTML URL
+  html_url=$(printf '%s\n' "$create_out" | tail -n 1)
+  echo "Created: $html_url"
+else
+  echo "mkgitea: could not create repo (maybe it already exists):" 1>&2
+  printf '%s\n' "$create_out" | sed 's/^/  /' 1>&2
+  if [ -z "$owner" ]; then
+    echo "mkgitea: falling back to your default tea login's user to look up the repo" 1>&2
+  fi
+fi
+
+# --- look up the repo to get its clone URLs ------------------------------
+# no --owner given: the repo was created under the authenticated tea user
+if [ -z "$owner" ]; then
+  owner=$(tea api "${api_args[@]}" /user 2>/dev/null | jq -r '.login // empty')
+  if [ -z "$owner" ]; then
+    echo "mkgitea: could not determine the Gitea user for this login" 1>&2
+    exit 1
+  fi
+fi
+
+# tea api prints the raw JSON of /api/v1/repos/<owner>/<name>
+repo_json=$(tea api "${api_args[@]}" "/repos/$owner/$name" 2>/dev/null) || {
+  echo "mkgitea: could not find repo $owner/$name on Gitea; no remote added" 1>&2
+  exit 1
+}
+
+if [ "$url_pref" = https ]; then
+  clone_url=$(jq -r '.clone_url // empty' <<<"$repo_json")
+else
+  clone_url=$(jq -r '.ssh_url // empty' <<<"$repo_json")
+  [ -n "$clone_url" ] || clone_url=$(jq -r '.clone_url // empty' <<<"$repo_json")
+fi
+
+if [ -z "$clone_url" ]; then
+  echo "mkgitea: could not determine a clone URL for ${owner:+$owner/}$name" 1>&2
+  exit 1
+fi
+
+echo "Clone URL: $clone_url"
+
+# --- add it as a remote --------------------------------------------------
+if [ -z "$remote_name" ]; then
+  if git remote get-url origin >/dev/null 2>&1; then
+    remote_name=gitea
+  else
+    remote_name=origin
+  fi
+fi
+
+if git remote get-url "$remote_name" >/dev/null 2>&1; then
+  existing=$(git remote get-url "$remote_name")
+  if [ "$existing" = "$clone_url" ]; then
+    echo "Remote '$remote_name' already points at $clone_url; nothing to do."
+  else
+    echo "mkgitea: remote '$remote_name' already exists with a different URL:" 1>&2
+    echo "  $existing" 1>&2
+    echo "Use -r to pick another remote name." 1>&2
+    exit 1
+  fi
+else
+  git remote add "$remote_name" "$clone_url"
+  echo "Added remote '$remote_name' -> $clone_url"
+fi
+
+# set upstream tracking for the current branch (config-based, so it works
+# before the first push; a fresh repo with no commits defaults to main)
+branch=$(git symbolic-ref --short -q HEAD || true)
+[ -n "$branch" ] || branch=main
+git config "branch.$branch.remote" "$remote_name"
+git config "branch.$branch.merge" "refs/heads/$branch"
+echo "Upstream: $branch -> $remote_name/$branch"
+
+echo
+if git rev-parse -q --verify "$branch" >/dev/null 2>&1; then
+  echo "Now push with:  git push $remote_name $branch"
+else
+  echo "Branch '$branch' has no commits yet. Commit first, then push:"
+  echo "  git add -A && git commit -m 'initial commit'"
+  echo "  git push $remote_name $branch"
+fi
