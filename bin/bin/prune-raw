@@ -1,0 +1,156 @@
+#!/usr/bin/env python3
+"""Delete RAW files that have no corresponding developed JPEG.
+
+Scans a directory tree for JPEGs (developed photos) and RAW files. A RAW is
+kept if any JPEG's filename stem matches or starts with the RAW's stem, so
+DSC_0017.jpg and DSC_0017_edited.jpg both keep DSC_0017.NEF. Matching is
+tree-wide (the pair need not be in the same directory) and case-insensitive.
+
+Also warns about JPEGs that match no RAW, since a renamed export could
+otherwise strand its source RAW in the delete list.
+
+Dry-run by default: prints the keep/delete lists without touching anything.
+Pass --delete to actually remove the orphaned RAWs.
+"""
+
+import argparse
+import os
+import sys
+from bisect import bisect_left
+
+JPEG_EXTS = {".jpg"}
+RAW_EXTS = {".nef", ".raf", ".dng"}
+
+
+def human_size(n):
+    for unit in ("B", "KB", "MB", "GB", "TB", "PB"):
+        if n < 1024 or unit == "PB":
+            return f"{n:.0f}{unit}" if n == int(n) else f"{n:.1f}{unit}"
+        n /= 1024
+
+
+def scan(directory):
+    """Return (jpeg entries, raw entries) as lists of (path, lowercase stem)."""
+    jpegs = []
+    raws = []
+    for root, dirs, files in os.walk(directory, followlinks=False):
+        dirs[:] = [d for d in dirs if not os.path.islink(os.path.join(root, d))]
+        for name in files:
+            path = os.path.join(root, name)
+            if os.path.islink(path):
+                continue
+            stem, ext = os.path.splitext(name)
+            ext = ext.lower()
+            if ext in JPEG_EXTS:
+                jpegs.append((path, stem.lower()))
+            elif ext in RAW_EXTS:
+                raws.append((path, stem.lower()))
+    return jpegs, raws
+
+
+def matching_jpeg(raw_stem, sorted_jpeg_stems):
+    """Return a JPEG stem that equals or starts with raw_stem, else None.
+
+    In a sorted list, if any string starts with raw_stem, the first string
+    >= raw_stem is one of them.
+    """
+    i = bisect_left(sorted_jpeg_stems, raw_stem)
+    if i < len(sorted_jpeg_stems) and sorted_jpeg_stems[i].startswith(raw_stem):
+        return sorted_jpeg_stems[i]
+    return None
+
+
+def jpeg_has_raw(jpeg_stem, raw_stems):
+    """True if any RAW stem equals or is a prefix of the JPEG stem."""
+    return any(jpeg_stem[:i] in raw_stems for i in range(1, len(jpeg_stem) + 1))
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "directory", nargs="?", default=".",
+        help="directory to scan (default: current directory)",
+    )
+    parser.add_argument(
+        "--delete", action="store_true",
+        help="delete orphaned RAWs (default: dry run)",
+    )
+    args = parser.parse_args()
+
+    if not os.path.isdir(args.directory):
+        print(f"error: {args.directory!r} is not a directory", file=sys.stderr)
+        sys.exit(1)
+
+    jpegs, raws = scan(args.directory)
+    jpeg_stems = sorted(stem for _, stem in jpegs)
+    raw_stems = {stem for _, stem in raws}
+
+    if not jpeg_stems or not raws:
+        print(f"Skipping {args.directory!r}: no {'JPEGs' if not jpeg_stems else 'RAWs'} found.")
+        return
+
+    kept = []      # (raw path, matching jpeg stem)
+    orphaned = []  # (raw path, size in bytes)
+    for path, stem in raws:
+        match = matching_jpeg(stem, jpeg_stems)
+        if match is not None:
+            kept.append((path, match))
+        else:
+            try:
+                size = os.lstat(path).st_size
+            except OSError:
+                size = 0
+            orphaned.append((path, size))
+
+    kept.sort()
+    orphaned.sort()
+
+    print(f"Scanned {args.directory!r}: {len(jpeg_stems)} JPEGs, {len(raws)} RAWs\n")
+
+    print(f"KEEP: {len(kept)} RAWs with a matching JPEG")
+    for path, match in kept:
+        print(f"  {path}  (matches {match})")
+
+    total = sum(size for _, size in orphaned)
+    print(f"\nDELETE: {len(orphaned)} orphaned RAWs")
+    for path, size in orphaned:
+        print(f"  {path}  ({human_size(size)})")
+
+    unmatched_jpegs = sorted(
+        path for path, stem in jpegs if not jpeg_has_raw(stem, raw_stems)
+    )
+    if unmatched_jpegs:
+        print(f"\nWARNING: {len(unmatched_jpegs)} JPEGs match no RAW "
+              "(their RAWs may be renamed or already deleted):")
+        for path in unmatched_jpegs:
+            print(f"  {path}")
+
+    if not orphaned:
+        return
+
+    if args.delete:
+        print(f"\n{len(orphaned)} files will be deleted, freeing {human_size(total)}.")
+    else:
+        print(f"\n{len(orphaned)} files would be deleted, freeing {human_size(total)}.")
+        print("Dry run: re-run with --delete to remove them.")
+        return
+
+    failures = 0
+    freed = 0
+    for path, size in orphaned:
+        try:
+            os.remove(path)
+            freed += size
+        except OSError as e:
+            print(f"error: cannot delete {path}: {e}", file=sys.stderr)
+            failures += 1
+    print(f"Deleted {len(orphaned) - failures} of {len(orphaned)} files, "
+          f"freeing {human_size(freed)}.")
+    if failures:
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
