@@ -45,6 +45,8 @@ alias stow="stow --dotfiles"
 # Enable completion
 # https://stackoverflow.com/questions/66338988/complete13-command-not-found-compdef
 fpath=(~/.zsh/completions $fpath)
+# add Homebrew completions
+fpath=($(brew --prefix)/share/zsh/site-functions $fpath)
 autoload -Uz compinit
 compinit
 
