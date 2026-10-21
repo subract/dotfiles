@@ -16,7 +16,7 @@ alias systemctl="systemctl --no-pager"
 alias cim="nvim"
 alias vim="nvim"
 alias j="just"
-alias pi='nono run --profile nolabs-ai/pi --allow-cwd --rollback -- pi'
+alias pi='nono run --profile pi --allow-cwd --allow-launch-services --rollback -- pi'
 
 # Human-readable sizes
 alias df='df -h'
