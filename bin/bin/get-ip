@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+set -e
+set -u
+set -o pipefail
+
+# Local IPs: anything on 192.168.x.x or 10.x.x.x across all interfaces.
+# Ignoring 172.x range since Docker uses them a bunch
+# Prefer `ip` (Linux), fall back to `ifconfig` (macOS/BSD, legacy Linux).
+local_ips=$(
+    if command -v ip >/dev/null 2>&1; then
+        ip -4 addr show scope global |
+            awk '/^[0-9]+:/ { iface = $2; sub(/:$/, "", iface) }
+                 /inet / {
+                     addr = $2; sub(/\/.*/, "", addr)
+                     if (addr ~ /^(192\.168\.|10\.)/) printf "  %-10s %s\n", iface ":", addr
+                 }'
+    else
+        ifconfig |
+            awk '/^[^[:space:]]/ { iface = $1; sub(/:$/, "", iface) }
+                 /inet / {
+                     addr = ($2 ~ /^addr:/) ? substr($2, 6) : $2
+                     if (addr ~ /^(192\.168\.|10\.)/) printf "  %-10s %s\n", iface ":", addr
+                 }'
+    fi
+)
+
+# Tailscale IP (empty if tailscale isn't running)
+tailscale_ip=$(tailscale ip -4 2>/dev/null || true)
+
+# Public IP
+public_ip=$(curl -fsS --max-time 5 https://api.ipify.org 2>/dev/null || echo "unavailable")
+
+echo "local:"
+if [[ -n "$local_ips" ]]; then
+    echo "$local_ips"
+else
+    echo "  none"
+fi
+
+echo "tailscale: ${tailscale_ip:-none}"
+echo "public: ${public_ip}"
