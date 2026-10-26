@@ -1,0 +1,247 @@
+#!/usr/bin/env bash
+# zfs-promote — move an existing directory into its own ZFS filesystem.
+set -e
+set -u
+set -o pipefail
+
+# Given /srv/gitea (currently on dataset tank/data, mounted at /srv):
+#   1. renames /srv/gitea -> /srv/gitea.adopt-old
+#   2. creates tank/data/gitea with an INHERITED mountpoint of /srv/gitea
+#   3. rsyncs the contents across
+#   4. on success, deletes /srv/gitea.adopt-old
+#
+# No explicit mountpoint is ever set: the new dataset (and any datasets
+# created to fill in missing path components) rely purely on inheritance,
+# the same way a root-on-ZFS layout works. Missing intermediate components
+# are created with canmount=off so they never mount or shadow anything.
+# Move the tree around later and the mountpoints follow automatically.
+#
+#   /srv/apps/gitea on tank/data ->
+#       tank/data/apps            canmount=off (created only if missing)
+#       tank/data/apps/gitea      inherits mountpoint /srv/apps/gitea
+
+PROG=$(basename "$0")
+DRY_RUN=0
+ASSUME_YES=0
+
+usage() {
+    cat <<EOF
+Usage: $PROG [-n] [-y] DIRECTORY
+       $PROG --audit DIRECTORY
+
+  DIRECTORY      Turn DIRECTORY into its own ZFS filesystem, preserving
+                 its contents. Mountpoints are inherited, never explicit.
+  --audit        Report everything directly under DIRECTORY that is not
+                 already its own ZFS dataset. Exits 1 if anything stray
+                 is found (handy for cron/systemd timers).
+EOF
+    exit 2
+}
+
+die() { echo "$PROG: error: $*" >&2; exit 1; }
+info() { echo "$PROG: $*"; }
+
+# ---- audit mode: list children of DIRECTORY that are not datasets -------
+if [ "${1:-}" = "--audit" ]; then
+    [ $# -eq 2 ] || usage
+    AUDIT_ROOT=$(readlink -f -- "$2")
+    [ -d "$AUDIT_ROOT" ] || die "not a directory: $AUDIT_ROOT"
+
+    root_info=$(findmnt -nro SOURCE,FSTYPE "$AUDIT_ROOT" 2>/dev/null) ||
+        die "$AUDIT_ROOT is not itself a ZFS mountpoint; nothing to audit"
+    read -r ROOT_SRC ROOT_FST <<< "$root_info"
+    [[ $ROOT_FST == zfs ]] || die "$AUDIT_ROOT is mounted from $ROOT_SRC ($ROOT_FST), not ZFS"
+
+    strays=0
+    audit_dir() {
+        local dir=$1 rel=${1#"$AUDIT_ROOT"} info src fstype
+        [ -n "$rel" ] || rel=/
+        if info=$(findmnt -nro SOURCE,FSTYPE "$dir" 2>/dev/null); then
+            read -r src fstype <<< "$info"
+            if [[ $fstype == zfs ]]; then
+                printf '  dataset   %-28s %s\n' "$rel" "$src"
+            else
+                printf '  OTHER FS  %-28s %s (%s)\n' "$rel" "$src" "$fstype"
+                strays=$((strays + 1))
+            fi
+            return   # don't descend into other filesystems
+        fi
+        printf '  STRAY     %-28s plain directory — adoptable\n' "$rel"
+        strays=$((strays + 1))
+    }
+
+    echo
+    printf '  %-9s %-28s %s\n' STATUS PATH SOURCE
+    audit_dir "$AUDIT_ROOT"
+    while IFS= read -r -d '' entry; do
+        if [ -d "$entry" ] && [ ! -L "$entry" ]; then
+            audit_dir "$entry"
+        else
+            printf '  STRAY     %-28s not a dataset\n' "${entry#"$AUDIT_ROOT"}"
+            strays=$((strays + 1))
+        fi
+    done < <(find "$AUDIT_ROOT" -mindepth 1 -maxdepth 1 -print0 | sort -z)
+    echo
+    if [ "$strays" -eq 0 ]; then
+        info "clean: everything directly under $AUDIT_ROOT is its own dataset"
+        exit 0
+    fi
+    info "$strays stray item(s) under $AUDIT_ROOT — run zfs-promote on the directories worth promoting"
+    exit 1
+fi
+
+while getopts "nyh" opt; do
+    case "$opt" in
+        n) DRY_RUN=1 ;;
+        y) ASSUME_YES=1 ;;
+        h|*) usage ;;
+    esac
+done
+shift $((OPTIND - 1))
+
+[ $# -eq 1 ] || usage
+[ "$(id -u)" -eq 0 ] || die "must run as root (zfs and mv below the mountpoint need it)"
+
+for cmd in zfs rsync findmnt; do
+    command -v "$cmd" >/dev/null 2>&1 || die "required command not found: $cmd"
+done
+
+DIR=$(readlink -f -- "$1")
+[ -d "$DIR" ] || die "not a directory: $DIR"
+
+# Refuse to adopt a directory that is itself a mountpoint (exact match;
+# --target would wrongly match the mount containing it).
+if EXACT_SRC=$(findmnt -nro SOURCE,FSTYPE "$DIR" 2>/dev/null); then
+    die "$DIR is itself a mountpoint ($EXACT_SRC); nothing to do"
+fi
+
+# Find the enclosing ZFS filesystem: the nearest zfs mount containing DIR.
+PARENT_MOUNT=$(findmnt -nro TARGET -t zfs -T "$DIR" 2>/dev/null) ||
+    die "no ZFS filesystem found enclosing $DIR"
+PARENT_FS=$(findmnt -nro SOURCE -t zfs -T "$DIR") ||
+    die "no ZFS filesystem found enclosing $DIR"
+
+REL=${DIR#"$PARENT_MOUNT"}
+REL=${REL#/}
+if [ -z "$REL" ]; then
+    die "$DIR is itself the mountpoint of $PARENT_FS; adopting it would require renaming that dataset, which this script does not support"
+fi
+
+# Inherited mountpoints only work if the parent actually mounts somewhere.
+PARENT_MNT_PROP=$(zfs get -H -o value mountpoint "$PARENT_FS")
+[ -d "$PARENT_MNT_PROP" ] || die "mountpoint of $PARENT_FS is '$PARENT_MNT_PROP', not a real path; inherited mountpoints would not land on $DIR"
+
+# Plan the dataset hierarchy: one dataset per remaining path component.
+IFS='/' read -r -a COMPONENTS <<< "$REL"
+PLAN=()
+CUR="$PARENT_FS"
+for comp in "${COMPONENTS[@]}"; do
+    CUR="$CUR/$comp"
+    PLAN+=("$CUR")
+done
+LEAF_DS="${PLAN[-1]}"
+
+# Sanity-check every component; ZFS is stricter than filesystems.
+for ds in "${PLAN[@]}"; do
+    comp=${ds##*/}
+    [[ $comp =~ ^[A-Za-z0-9][A-Za-z0-9_.:-]*$ ]] ||
+        die "path component '$comp' is not a valid ZFS dataset name"
+done
+
+OLD="${DIR}.adopt-old"
+[ -e "$OLD" ] && die "leftover backup path exists: $OLD (resolve it first)"
+
+echo
+echo "  directory : $DIR"
+echo "  parent fs : $PARENT_FS (mounted at $PARENT_MOUNT)"
+echo "  new fs    : $LEAF_DS (mountpoint inherited -> $DIR)"
+for ds in "${PLAN[@]:0:$((${#PLAN[@]} - 1))}"; do
+    if zfs list -H -o name "$ds" >/dev/null 2>&1; then
+        echo "              $ds (exists)"
+    else
+        echo "              $ds (will create, canmount=off)"
+    fi
+done
+echo "  backup    : contents moved to $OLD, removed after a successful copy"
+echo
+
+if [ "$DRY_RUN" -eq 1 ]; then
+    info "dry run: no changes made"
+    exit 0
+fi
+
+info "reminder: stop any services using $DIR first, or you will chase open files."
+
+if [ "$ASSUME_YES" -ne 1 ]; then
+    read -r -p "Proceed? [y/N] " reply
+    case "$reply" in
+        y|Y) ;;
+        *) die "aborted" ;;
+    esac
+fi
+
+CREATED=()
+cleanup_datasets() {
+    local ds
+    for ((i=${#CREATED[@]} - 1; i >= 0; i--)); do
+        ds=${CREATED[i]}
+        zfs destroy "$ds" || echo "$PROG: warning: failed to destroy $ds during rollback" >&2
+    done
+}
+
+# 1. Move the original out of the way so zfs can mount into a clean path.
+mv -- "$DIR" "$OLD" || die "could not move $DIR to $OLD"
+
+# 2. Create intermediate datasets (canmount=off, pure organizational nodes)
+#    and the leaf, whose mountpoint is inherited all the way from the top.
+for ((i = 0; i < ${#PLAN[@]}; i++)); do
+    ds=${PLAN[i]}
+    if zfs list -H -o name "$ds" >/dev/null 2>&1; then
+        continue
+    fi
+    if [ "$i" -eq "$((${#PLAN[@]} - 1))" ]; then
+        # Leaf: inherits mountpoint, mounts automatically.
+        if ! zfs create "$ds"; then
+            cleanup_datasets
+            mv -- "$OLD" "$DIR"
+            die "zfs create $ds failed; original directory restored"
+        fi
+    else
+        if ! zfs create -o canmount=off "$ds"; then
+            cleanup_datasets
+            mv -- "$OLD" "$DIR"
+            die "zfs create $ds failed; original directory restored"
+        fi
+    fi
+    CREATED+=("$ds")
+done
+
+# 3. Confirm inheritance actually landed where we expect before copying.
+INHERITED=$(zfs get -H -o value mountpoint "$LEAF_DS")
+if [ "$INHERITED" != "$DIR" ] || [ "$(findmnt -nro TARGET "$DIR" 2>/dev/null)" != "$DIR" ]; then
+    cleanup_datasets
+    mv -- "$OLD" "$DIR"
+    die "$LEAF_DS inherited mountpoint '$INHERITED' instead of $DIR; original directory restored"
+fi
+
+# 4. Copy everything in. Reflink is a fast block clone on ZFS >= 2.2 with
+#    rsync builds that support it, but not every rsync has --reflink, so
+#    probe once. Original data stays safe in $OLD either way.
+RSYNC_OPTS=(-aHAXS --numeric-ids --info=progress2)
+if rsync --help 2>&1 | grep -q -- --reflink; then
+    RSYNC_OPTS+=(--reflink=auto)
+else
+    info "this rsync build lacks --reflink; using a plain copy"
+fi
+if ! rsync "${RSYNC_OPTS[@]}" -- "$OLD"/ "$DIR"/; then
+    echo "$PROG: error: rsync failed." >&2
+    echo "  original data is untouched in: $OLD" >&2
+    echo "  to roll back:  umount $DIR && rmdir $DIR && mv $OLD $DIR && zfs destroy $LEAF_DS" >&2
+    echo "  to retry:      re-run rsync, then remove $OLD" >&2
+    exit 1
+fi
+
+# 5. Success — drop the backup.
+rm -rf -- "$OLD"
+
+info "done: $DIR is now the mountpoint of $LEAF_DS (inherited)"
