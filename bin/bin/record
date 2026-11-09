@@ -1,0 +1,171 @@
+#!/usr/bin/env bash
+set -e
+set -u
+set -o pipefail
+
+usage() {
+	echo "usage: record [session name]" >&2
+	if [[ $# -gt 0 ]]; then
+		echo "  $*" >&2
+	else
+		echo "  Records a terminal session with \`script\` and saves it as" >&2
+		echo "  <name>-YYMMDD-HHMM.script. Prompts for the name if not given." >&2
+	fi
+	exit 1
+}
+
+cleanup_output() {
+	# Post-process the raw typescript in place.
+	#
+	#   - capture OSC 2 window titles (they hold the command being run)
+	#   - strip OSC sequences, non-SGR CSI codes, cursor movement, etc.
+	#   - emulate backspaces so shell retype artifacts collapse to the
+	#     final typed text
+	#   - replace raw prompt lines with a clean "$ <command>" marker
+	#     built from the captured titles
+	#   - collapse full-screen apps (vim, less, ssh, ...) to a single
+	#     marker line, dropping their screen-redraw noise
+	#   - normalize CR line endings
+	#
+	# SGR (color) codes are preserved throughout.
+	python3 - "$1" <<'PYEOF'
+import re
+import sys
+
+path = sys.argv[1]
+with open(path, 'rb') as f:
+    data = f.read().decode('utf-8', 'replace')
+lines = data.split('\n')
+
+# 1. Capture OSC 2 window titles: the shell sets the title to the
+#    command it is about to run, right before the output appears. The
+#    prompt line itself only carries the idle cwd title.
+titles = []  # (line_index, command)
+for i, line in enumerate(lines):
+    m = re.search(r'\x1b\]2;([^\x07\x1b]*)(?:\x07|\x1b\\)', line)
+    if m:
+        titles.append((i, m.group(1)))
+
+# 1b. Full-screen apps own the whole display; their redraw noise is
+#     not log-worthy, so their output gets collapsed to a marker line.
+FS_RE = re.compile(
+    r'^(?:vim|vi|nvim|view|less|more|most|man|nano|pico|'
+    r'htop|top|btop|iotop|tmux|screen|ssh|tig|watch|mutt|neomutt|emacs)\b')
+fs_titles = {}  # line_index -> command
+for i, cmd in titles:
+    if FS_RE.match(cmd):
+        fs_titles[i] = cmd
+
+
+def strip_sgr_keep(m):
+    # Keep SGR sequences (colors), drop all other CSI codes.
+    return m.group(0) if m.group(2) == 'm' else ''
+
+
+def emulate_backspaces(s):
+    while True:
+        i = s.find('\x08')
+        if i < 0:
+            return s
+        s = (s[:i - 1] if i > 0 else s[:i]) + s[i + 1:]
+
+
+t = 0  # pointer into titles
+prompt_re = re.compile(r'^(?:\x1b\[[0-9;]*m)*%(?:\x1b\[[0-9;]*m|\s){15,}')
+# Same pattern unanchored, for finding a prompt redraw that the
+# full-screen app's last update got glued onto.
+prompt_search = re.compile(r'%(?:\x1b\[[0-9;]*m|\s){15,}')
+
+
+def replace_prompt(i):
+    # Rebuild a prompt line from the next captured title. Titles on or
+    # before this line are stale: idle cwd titles, or commands whose
+    # prompt was already replaced.
+    global t
+    cmd = ''
+    while t < len(titles) and titles[t][0] <= i:
+        t += 1
+    if t < len(titles):
+        cmd = titles[t][1]
+        t += 1
+    return '\x1b[36m$\x1b[0m ' + cmd if cmd else '\x1b[36m$\x1b[0m'
+
+
+skipping = False  # inside a full-screen app's redraw noise
+kept = []
+for i, line in enumerate(lines):
+    line = re.sub(r'\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)', '', line)  # OSC
+    line = re.sub(r'\x1b\[([0-9;?<=>!]*)([\x40-\x7e])', strip_sgr_keep, line)
+    line = re.sub(r'\x1b[=>]|\x1b\\|\x07', '', line)  # keypad, ST, BEL
+
+    if i in fs_titles:
+        # Full-screen app starts: emit a marker. If the shell's next
+        # prompt redraw is glued onto this same line (the app exited
+        # without a newline), emit it too and carry on; otherwise drop
+        # everything until the next prompt shows up.
+        kept.append('\x1b[36m┄\x1b[0m ' + fs_titles[i] + ' \x1b[36m┄\x1b[0m')
+        if not skipping and prompt_search.search(line):
+            kept.append(replace_prompt(i))
+        else:
+            skipping = True
+        continue
+
+    if skipping:
+        # Leave the app when the next prompt redraw shows up. It may
+        # be glued onto the same physical line as the app's last
+        # update, so search anywhere in the line; the residue before
+        # it is redraw junk and gets dropped.
+        if prompt_search.search(line):
+            kept.append(replace_prompt(i))
+            skipping = False
+        # else: still inside the app's screen; drop the line
+        continue
+
+    if prompt_re.match(line):
+        kept.append(replace_prompt(i))
+        continue
+
+    kept.append(emulate_backspaces(line).rstrip('\r'))
+
+with open(path, 'wb') as f:
+    f.write('\n'.join(kept).encode('utf-8'))
+PYEOF
+}
+
+if [[ $# -gt 1 ]]; then
+	usage "too many arguments: $*"
+fi
+
+if [[ $# -eq 1 ]]; then
+	name="$1"
+else
+	printf 'session name: '
+	read -r name
+fi
+[[ -n "$name" ]] || { echo "record: empty session name" >&2; exit 1; }
+
+tmp="$(mktemp -t record.XXXXXX)"
+trap 'rm -f "$tmp"' EXIT
+
+start_time="$(date '+%Y-%m-%d %H:%M:%S')"
+
+echo "recording session '$name' — exit the shell to stop"
+# The recorded shell's exit status must not abort us (set -e) before
+# the session is saved, so swallow it here.
+script -q "$tmp" || true
+end_time="$(date '+%Y-%m-%d %H:%M:%S')"
+
+# Same for cleanup: on failure, save the raw (or partially cleaned)
+# typescript rather than losing the session.
+cleanup_output "$tmp" || echo "record: cleanup failed, saving raw typescript" >&2
+
+out="${name}-$(date +%y%m%d-%H%M).script"
+{
+	printf '\x1b[36msession start:\x1b[0m %s\n' "$start_time"
+	cat "$tmp"
+	printf '\x1b[36msession end:\x1b[0m   %s\n' "$end_time"
+} > "$out"
+rm -f "$tmp"
+trap - EXIT
+
+echo "saved: $out"
