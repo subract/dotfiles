@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Generate random two-word usernames by pairing a word from list1.txt
+# with one from list2.txt (wordlists live in ~/env/resources).
+set -e
+set -u
+set -o pipefail
+
+resource_dir="$HOME/env/resources"
+
+readarray -t list1 < "$resource_dir/list1.txt"
+readarray -t list2 < "$resource_dir/list2.txt"
+
+count=${1:-10}
+
+# Color the two halves when outputting to a terminal; plain when piped
+if [ -t 1 ]; then
+  c1=$'\e[36m'   # cyan for list1
+  c2=$'\e[33m'   # yellow for list2
+  reset=$'\e[0m'
+else
+  c1='' c2='' reset=''
+fi
+
+for ((i = 0; i < count; i++)); do
+  word1=${list1[RANDOM % ${#list1[@]}]}
+  word2=${list2[RANDOM % ${#list2[@]}]}
+  echo "${c1}${word1}${reset}${c2}${word2}${reset}"
+done
