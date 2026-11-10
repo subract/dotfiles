@@ -18,6 +18,7 @@ alias vim="nvim"
 alias j="just"
 alias pi='nono run --profile pi --allow-cwd --allow-launch-services --rollback -- pi'
 alias less="bat"
+alias ws="with-secrets"
 
 # Human-readable sizes
 alias df='df -h'
