@@ -49,6 +49,8 @@ alias stow="stow --dotfiles"
 fpath=(~/.zsh/completions $fpath)
 # add Homebrew completions
 fpath=($(brew --prefix)/share/zsh/site-functions $fpath)
+# add personal bin completions
+fpath=($HOME/bin/completions $fpath)
 autoload -Uz compinit
 compinit
 
