@@ -4,8 +4,7 @@
 add_newline = false
 
 format = """
-${custom.root}\
-[](peach)\
+${custom.root}${custom.peach_cap}\
 $directory\
 [](bg:yellow fg:peach)\
 $git_branch\
@@ -37,7 +36,13 @@ truncation_symbol = "…/"
 [custom.root]
 when = '[ "$(id -u)" = "0" ]'
 command = 'echo root'
-format = '[$output ](bold red)'
+format = '[](red)[ $output ](bg:red fg:crust)[](fg:red bg:peach)'
+
+# plain peach cap when not root
+[custom.peach_cap]
+when = '[ "$(id -u)" != "0" ]'
+command = 'true'
+format = '[](peach)'
 
 [git_branch]
 symbol = ""
@@ -60,7 +65,6 @@ vimcmd_replace_symbol = '[❮](bold fg:lavender)'
 vimcmd_visual_symbol = '[❮](bold fg:yellow)'
 
 [cmd_duration]
-show_milliseconds = true
 format = " in $duration "
 style = "bg:lavender"
 disabled = false
