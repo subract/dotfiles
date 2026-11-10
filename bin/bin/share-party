@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+set -e
+set -u
+set -o pipefail
+
+usage() {
+  cat <<EOF
+usage: share-party FILE [DEST]
+
+Upload FILE to a copyparty instance. DEST is the server-side directory
+(default: /public).
+
+env:
+  SHARE_PARTY_URL    instance base url
+  SHARE_PARTY_USER   username for basic auth
+  ENC_SHARE_PARTY_PASS   password for basic auth
+EOF
+  exit 2
+}
+
+[ $# -ge 1 ] && [ $# -le 2 ] || usage
+
+file=$1
+[ -f "$file" ] || { echo "share-party: no such file: $file" 1>&2; exit 1; }
+
+if [ -z "${SHARE_PARTY_URL:-}" ] || [ -z "${SHARE_PARTY_USER:-}" ] || [ -z "${ENC_SHARE_PARTY_PASS:-}" ]; then
+  echo "share-party: SHARE_PARTY_URL, SHARE_PARTY_USER and ENC_SHARE_PARTY_PASS must all be set" 1>&2
+  exit 1
+fi
+
+base_url=${SHARE_PARTY_URL}
+dest=${2:-/public}
+
+# url-encode the remote name; curl -T doesn't do it for us
+remote_name=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$(basename "$file")")
+
+url="${base_url%/}/${dest#/}/"
+
+auth=(-u "${SHARE_PARTY_USER}:${ENC_SHARE_PARTY_PASS}")
+
+echo "uploading $(basename "$file")" 1>&2
+
+# copyparty's default PUT response body is size/checksum/url lines; ask for
+# just the final URL instead (it may differ if the server renamed the file)
+final_url=$(curl -fsS -T "$file" -H 'Accept: url' "${auth[@]}" "$url/$remote_name")
+
+echo -n "$final_url"
+echo "$final_url" | pbcopy && echo " copied to clipboard" 1>&2
