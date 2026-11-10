@@ -8,12 +8,16 @@ usage() {
 usage: share-party FILE [DEST]
 
 Upload FILE to a copyparty instance. DEST is the server-side directory
-(default: /public).
+(default: /public); the file actually lands in DEST/<word>-<word>/, a
+randomly-named subdirectory so uploads can't be enumerated.
 
 env:
-  SHARE_PARTY_URL    instance base url
-  SHARE_PARTY_USER   username for basic auth
-  ENC_SHARE_PARTY_PASS   password for basic auth
+  SHARE_PARTY_URL       instance base url
+  SHARE_PARTY_USER      username for basic auth
+  ENC_SHARE_PARTY_PASS  password for basic auth
+  SHARE_PARTY_WORDLIST  wordlist to draw names from
+                        (default: ~/env/resources/eff_large_wordlist.txt)
+  SHARE_PARTY_WORDS     how many words in the subdir name (default: 3)
 EOF
   exit 2
 }
@@ -31,6 +35,21 @@ fi
 base_url=${SHARE_PARTY_URL}
 dest=${2:-/public}
 
+# random subdir: words from the EFF large wordlist (col 2 of
+# dice-number<TAB>word lines), e.g. "quartz-elm-vortex". three words
+# (~39 bits) because with dky the dirname is the only secret on file URLs
+wordlist=${SHARE_PARTY_WORDLIST:-$HOME/env/resources/eff_large_wordlist.txt}
+[ -f "$wordlist" ] || { echo "share-party: wordlist not found: $wordlist" 1>&2; exit 1; }
+nwords=${SHARE_PARTY_WORDS:-3}
+case "$nwords" in (*[!0-9]*|0|[12]|[7-9]*)
+  echo "share-party: SHARE_PARTY_WORDS must be 3-6 (got: $nwords)" 1>&2; exit 1
+esac
+subdir=$(python3 -c 'import random, sys
+n, path = int(sys.argv[1]), sys.argv[2]
+words = [l.split("\t")[1].strip().lower() for l in open(path) if "\t" in l]
+print("-".join(random.sample(words, n)))' "$nwords" "$wordlist")
+dest="${dest%/}/${subdir}"
+
 # url-encode the remote name; curl -T doesn't do it for us
 remote_name=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys.argv[1]))' "$(basename "$file")")
 
@@ -41,8 +60,9 @@ auth=(-u "${SHARE_PARTY_USER}:${ENC_SHARE_PARTY_PASS}")
 echo "uploading $(basename "$file")" 1>&2
 
 # copyparty's default PUT response body is size/checksum/url lines; ask for
-# just the final URL instead (it may differ if the server renamed the file)
-final_url=$(curl -fsS -T "$file" -H 'Accept: url' "${auth[@]}" "$url/$remote_name")
+# just the final URL instead (it may differ if the server renamed the file).
+# progress meter goes to stderr so it survives the command substitution
+final_url=$(curl -f --progress-bar -T "$file" -H 'Accept: url' "${auth[@]}" "$url$remote_name")
 
 echo -n "$final_url"
 echo "$final_url" | pbcopy && echo " copied to clipboard" 1>&2
