@@ -16,6 +16,10 @@ map("n", "<CR>", "o<Esc>")
 -- "Very magic" search by default (sane regexes)
 map({ "n", "v" }, "/", "/\\v")
 
+-- Keep the visual selection after indenting, so < and > can be pressed repeatedly
+map("v", "<", "<gv")
+map("v", ">", ">gv")
+
 -- Clear search highlight with Escape
 map("n", "<Esc>", "<cmd>nohlsearch<CR>")
 
