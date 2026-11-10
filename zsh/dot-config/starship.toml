@@ -4,6 +4,7 @@
 add_newline = false
 
 format = """
+${custom.root}\
 [](peach)\
 $directory\
 [](bg:yellow fg:peach)\
@@ -31,6 +32,12 @@ truncation_symbol = "…/"
 "Music" = "󰝚 "
 "Pictures" = " "
 "Developer" = "󰲋 "
+
+# red 'root' badge when running as root (su, sudo -s, root ssh)
+[custom.root]
+when = '[ "$(id -u)" = "0" ]'
+command = 'echo root'
+format = '[$output ](bold red)'
 
 [git_branch]
 symbol = ""
