@@ -14,7 +14,15 @@ alias less="bat"
 alias ws="with-secrets"
 
 # docker/compose
-alias dc='docker compose $(find {{ compose_dir }} -maxdepth 1 -name "*.yml" | sed -e "s/^/-f /")'
+# compose files live in /opt/doc; explicit -f flags so dc works from anywhere
+dc() {
+    local f
+    local -a files
+    for f in /opt/doc/*.yml(N) /opt/doc/*.yaml(N); do
+        files+=(-f "$f")
+    done
+    docker compose "${files[@]}" "$@"
+}
 alias dcls="docker container ls"
 alias dcps="docker container ps"
 alias dcl="docker logs"
