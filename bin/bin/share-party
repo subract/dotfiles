@@ -14,7 +14,7 @@ randomly-named subdirectory so uploads can't be enumerated.
 env:
   SHARE_PARTY_URL       instance base url
   SHARE_PARTY_USER      username for basic auth
-  ENC_SHARE_PARTY_PASS  password for basic auth
+  SHARE_PARTY_PASS      password for basic auth
   SHARE_PARTY_WORDLIST  wordlist to draw names from
                         (default: ~/env/resources/eff_large_wordlist.txt)
   SHARE_PARTY_WORDS     how many words in the subdir name (default: 3)
@@ -27,8 +27,8 @@ EOF
 file=$1
 [ -f "$file" ] || { echo "share-party: no such file: $file" 1>&2; exit 1; }
 
-if [ -z "${SHARE_PARTY_URL:-}" ] || [ -z "${SHARE_PARTY_USER:-}" ] || [ -z "${ENC_SHARE_PARTY_PASS:-}" ]; then
-  echo "share-party: SHARE_PARTY_URL, SHARE_PARTY_USER and ENC_SHARE_PARTY_PASS must all be set" 1>&2
+if [ -z "${SHARE_PARTY_URL:-}" ] || [ -z "${SHARE_PARTY_USER:-}" ] || [ -z "${SHARE_PARTY_PASS:-}" ]; then
+  echo "share-party: SHARE_PARTY_URL, SHARE_PARTY_USER and SHARE_PARTY_PASS must all be set" 1>&2
   exit 1
 fi
 
@@ -55,7 +55,7 @@ remote_name=$(python3 -c 'import sys, urllib.parse; print(urllib.parse.quote(sys
 
 url="${base_url%/}/${dest#/}/"
 
-auth=(-u "${SHARE_PARTY_USER}:${ENC_SHARE_PARTY_PASS}")
+auth=(-u "${SHARE_PARTY_USER}:${SHARE_PARTY_PASS}")
 
 echo "uploading $(basename "$file")" 1>&2
 
