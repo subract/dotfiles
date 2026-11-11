@@ -13,6 +13,14 @@ alias pi-unsafe='\pi'
 alias less="bat"
 alias ws="with-secrets"
 
+# docker/compose
+alias dc='docker compose $(find {{ compose_dir }} -maxdepth 1 -name "*.yml" | sed -e "s/^/-f /")'
+alias dcls="docker container ls"
+alias dcps="docker container ps"
+alias dcl="docker logs"
+alias dclf="docker logs --follow"
+alias dcsh='f() { docker exec -it "$1" bash || docker exec -it "$1" sh; }; f'
+
 # Human-readable sizes
 alias df='df -h'
 alias du='du -h'
