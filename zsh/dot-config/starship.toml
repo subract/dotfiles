@@ -6,10 +6,7 @@ add_newline = false
 format = """
 ${custom.root}${custom.peach_cap}\
 $directory\
-[](bg:yellow fg:peach)\
-$git_branch\
-$git_status\
-[](fg:yellow)\
+${custom.git_clean}${custom.git_dirty}${custom.git_sep}\
 $cmd_duration\
 $line_break\
 $character"""
@@ -44,14 +41,44 @@ when = '[ "$(id -u)" != "0" ]'
 command = 'true'
 format = '[](peach)'
 
-[git_branch]
-symbol = ""
-style = "bg:yellow"
-format = '[[ $symbol $branch ](fg:crust bg:yellow)]($style)'
+# entire git segment turns green with a checkmark when the working tree is clean
+[custom.git_clean]
+when = 'git rev-parse --is-inside-work-tree >/dev/null 2>&1 && test -z "$(git status --porcelain 2>/dev/null)"'
+command = '''
+b=$(git branch --show-current 2>/dev/null)
+[ -n "$b" ] || b=$(git rev-parse --short HEAD 2>/dev/null)
+a=$(git rev-list --count "@{upstream}..HEAD" 2>/dev/null)
+r=$(git rev-list --count "HEAD..@{upstream}" 2>/dev/null)
+g="✓"
+[ "${a:-0}" -gt 0 ] && g="${g}⇡$a"
+[ "${r:-0}" -gt 0 ] && g="${g}⇣$r"
+printf '%s %s' "$b" "$g"
+'''
+format = '[](fg:peach bg:green)[$output ](fg:crust bg:green)[](fg:green)'
 
-[git_status]
-style = "bg:yellow"
-format = '[[($all_status$ahead_behind )](fg:crust bg:yellow)]($style)'
+# entire git segment turns yellow with status glyphs when the working tree is dirty
+[custom.git_dirty]
+when = 'git rev-parse --is-inside-work-tree >/dev/null 2>&1 && test -n "$(git status --porcelain 2>/dev/null)"'
+command = '''
+b=$(git branch --show-current 2>/dev/null)
+[ -n "$b" ] || b=$(git rev-parse --short HEAD 2>/dev/null)
+s=$(git status --porcelain 2>/dev/null)
+g=""
+printf '%s\n' "$s" | grep -q '^??' && g="${g}?"
+printf '%s\n' "$s" | grep -qv '^??' && g="${g}!"
+a=$(git rev-list --count "@{upstream}..HEAD" 2>/dev/null)
+r=$(git rev-list --count "HEAD..@{upstream}" 2>/dev/null)
+[ "${a:-0}" -gt 0 ] && g="${g}⇡$a"
+[ "${r:-0}" -gt 0 ] && g="${g}⇣$r"
+printf '%s %s' "$b" "$g"
+'''
+format = '[](fg:peach bg:yellow)[$output ](fg:crust bg:yellow)[](fg:yellow)'
+
+# yellow powerline cap when outside a repo
+[custom.git_sep]
+when = '! git rev-parse --is-inside-work-tree >/dev/null 2>&1'
+format = '[](fg:yellow)'
+
 [line_break]
 disabled = true
 
@@ -68,7 +95,8 @@ vimcmd_visual_symbol = '[❮](bold fg:yellow)'
 format = " in $duration "
 style = "bg:lavender"
 disabled = false
-show_notifications = true
+min_time = 10000
+show_notifications = false
 min_time_to_notify = 45000
 
 [palettes.catppuccin_mocha]

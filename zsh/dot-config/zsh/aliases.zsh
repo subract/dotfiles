@@ -9,6 +9,7 @@ alias cim="nvim"
 alias vim="nvim"
 alias j="just"
 alias pi='nono run --profile pi --allow-cwd --allow-launch-services --rollback -- pi'
+alias pi-unsafe='\pi'
 alias less="bat"
 alias ws="with-secrets"
 

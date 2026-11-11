@@ -1,5 +1,12 @@
 # zsh entry point
 
+# shared env vars from the private ~/env repo (set -a exports un-exported keys)
+if [[ -f "$HOME/env/common.env" ]]; then
+  set -a
+  source "$HOME/env/common.env"
+  set +a
+fi
+
 # split config, in load order
 source ~/.config/zsh/path.zsh
 source ~/.config/zsh/aliases.zsh
